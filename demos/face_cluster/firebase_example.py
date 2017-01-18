@@ -121,7 +121,10 @@ def stream_handle(message):
 
 # macs_result = match_mac_image("/home/vdvinh/FaceNet/openface/demos/71483431485500")
 # print macs_result
-print match_mac_image("/home/vdvinh/FaceNet/openface/demos/face_cluster/testid/framtest")
+print match_mac_image("/media/vdvinh/newdisk/FaceNet/openface/demos/face_cluster/testid/framtest0")
+print match_mac_image("/media/vdvinh/newdisk/FaceNet/openface/demos/face_cluster/testid/framtest1")
+print match_mac_image("/media/vdvinh/newdisk/FaceNet/openface/demos/face_cluster/testid/framtest2")
+print match_mac_image("/media/vdvinh/newdisk/FaceNet/openface/demos/face_cluster/testid/framtest3")
 #match_mac_image("/home/vdvinh/FaceNet/openface/demos/face_cluster/testid/2a9fb0f5-dcbd-41c5-90e5-ed3172efc8f4")
 #db = firebase.database()
 #my_stream = db.child("/upload").stream(stream_handler=stream_handle)

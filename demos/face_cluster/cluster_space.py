@@ -10,10 +10,10 @@ import pickle
 from Encoder import encoder
 from munkres import Munkres
 E = encoder()
-RECOGNISE_THRESHOLD = 1.0
+RECOGNISE_THRESHOLD = 0.9
 MERGE_DISTANCE_THRESHOLD = 2.0
 INCREMENTAL_TRAIN_THRESHOLD = 10
-TRAIN_THRESHOLD = 35
+TRAIN_THRESHOLD = 36
 SMALLEST_SIZE_NAME_THRESHOLD = 5
 
 def pad_to_square(a, pad_value=0):

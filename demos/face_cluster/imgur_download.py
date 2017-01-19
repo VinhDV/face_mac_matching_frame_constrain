@@ -5,6 +5,7 @@ import shutil
 
 
 def getImg(directory, link, idx):
+    print ('Image link ', link)
     r = requests.get(link, stream=True)
     file_name = link.split('/')[-1]
     if (r.status_code == 200):

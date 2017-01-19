@@ -12,9 +12,9 @@ from munkres import Munkres
 E = encoder()
 RECOGNISE_THRESHOLD = 0.9
 MERGE_DISTANCE_THRESHOLD = 2.0
-INCREMENTAL_TRAIN_THRESHOLD = 10
-TRAIN_THRESHOLD = 36
-SMALLEST_SIZE_NAME_THRESHOLD = 5
+INCREMENTAL_TRAIN_THRESHOLD = 20
+TRAIN_THRESHOLD = 40
+SMALLEST_SIZE_NAME_THRESHOLD = 8
 
 def pad_to_square(a, pad_value=0):
     m = a.reshape((a.shape[0], -1))
@@ -82,6 +82,7 @@ class Clusterspace:
         self.frams = set()
 
     def incremental_train(self):
+        print "-----------------------------INCREMENTAL TRAINING----------------------------------"
         new_clusters = []
         newframs = self.update_fram() - self.frams
         if len(newframs) == 0:
@@ -95,9 +96,24 @@ class Clusterspace:
         self.merge_closest(MERGE_DISTANCE_THRESHOLD)
         self.name()
 
+        d = defaultdict()
+        d["clusters_space"] = self.clusters_space
+        d["data_dir"] = self.data_dir
+        d["distances"] = self.distances
+        d["frams"] = self.frams
+        pickle.dump(d, open("trained_space.p", "wb"), protocol=2)
+
     def train(self):
+        print "#fram = " + str(len(self.update_fram()))
+        if isfile("trained_space.p") and len(self.clusters_space) == 0:
+            space = pickle.load(open("trained_space.p", "rb"))
+            self.clusters_space = space["clusters_space"]
+            self.data_dir = space["data_dir"]
+            self.distances = space["distances"]
+            self.frams = space["frams"]
         newframs = self.update_fram() - self.frams
-        if len(newframs) > 0 and len(newframs)%TRAIN_THRESHOLD == 0:
+        if len(newframs) > 0 and len(self.update_fram())%TRAIN_THRESHOLD == 0:
+            print "-----------------------------TRAINING----------------------------------"
             self.renew()
             if isfile("data.p") and isfile("path2rep.p") :
                 data = pickle.load(open("data.p", "rb"))
@@ -138,7 +154,7 @@ class Clusterspace:
                 d["distances"] = self.distances
                 d["frams"] = self.frams
                 pickle.dump(d, open("trained_space.p", "wb"), protocol=2)
-        elif len(newframs) > TRAIN_THRESHOLD \
+        elif len(self.update_fram()) > TRAIN_THRESHOLD \
                 and len(newframs)%INCREMENTAL_TRAIN_THRESHOLD == 0  \
                 and len(newframs)%TRAIN_THRESHOLD != 0:
                 self.incremental_train()
@@ -150,6 +166,8 @@ class Clusterspace:
             return None
         f_path = self.data_dir + "/" + f_path.split("/")[-1]
         clusters = self.read_fram(f_path)
+        if len(clusters) == 0:
+            return None
         _, working_cluster_idx = self.getWorkingCluster()
         dist = np.zeros((len(clusters), len(working_cluster_idx)))
 
@@ -172,9 +190,9 @@ class Clusterspace:
                 for j in range(dist.shape[1]):
                     dist[i][j] = 987654321
 
-        for i in range(len(clusters)):
-            a = clusters[i]
-            a.show_faces()
+        # for i in range(len(clusters)):
+        #     a = clusters[i]
+        #     a.show_faces()
 
         m = Munkres()
         dist = pad_to_square(dist, pad_value=0)
@@ -182,7 +200,7 @@ class Clusterspace:
         indexes = m.compute(tmp)
 
         ret = defaultdict()
-        print "MATCH:"
+        print "-------------------------------MATCH-----------------------------------------"
         for row, column in indexes:
             if tmp[row][column] == 987654321:
                 idx2working_cluster_idx[row] = -1
@@ -281,6 +299,7 @@ class Clusterspace:
         return working_cluster, idx
 
     def name(self):
+        print "------------------------------------NAMING-------------------------------------"
         a, _ = self.getWorkingCluster()
         for cluster in a:
             if cluster.name == "no_name" and len(cluster.facepics)>SMALLEST_SIZE_NAME_THRESHOLD:

@@ -80,7 +80,7 @@ class FaceCluster:
                 name = acluster.name
             elif acluster.name == "no_name":
                 name = self.name
-            elif len(self.facepics) > len(acluster.facepics):
+            elif len(self.facepics) > len(acluster.facepics) and self.name != "no_name":
                 name = self.name
             else:
                 name = acluster.name

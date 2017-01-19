@@ -25,6 +25,7 @@ from os.path import isfile, join
 import cv2
 import numpy as np
 import openface
+import sys
 
 
 class preprocesser:

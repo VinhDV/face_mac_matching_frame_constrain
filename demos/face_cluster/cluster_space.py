@@ -81,6 +81,21 @@ class Clusterspace:
         self.distances = defaultdict()
         self.frams = set()
 
+    def save_model(self):
+        d = defaultdict()
+        d["clusters_space"] = self.clusters_space
+        d["data_dir"] = self.data_dir
+        d["distances"] = self.distances
+        d["frams"] = self.frams
+        pickle.dump(d, open("trained_space.p", "wb"), protocol=2)
+
+    def load_model(self):
+        space = pickle.load(open("trained_space.p", "rb"))
+        self.clusters_space = space["clusters_space"]
+        self.data_dir = space["data_dir"]
+        self.distances = space["distances"]
+        self.frams = space["frams"]
+
     def incremental_train(self):
         print "-----------------------------INCREMENTAL TRAINING----------------------------------"
         new_clusters = []
@@ -95,65 +110,40 @@ class Clusterspace:
         self.add_clusters(new_clusters)
         self.merge_closest(MERGE_DISTANCE_THRESHOLD)
         self.name()
-
-        d = defaultdict()
-        d["clusters_space"] = self.clusters_space
-        d["data_dir"] = self.data_dir
-        d["distances"] = self.distances
-        d["frams"] = self.frams
-        pickle.dump(d, open("trained_space.p", "wb"), protocol=2)
+        self.save_model()
 
     def train(self):
         print "#fram = " + str(len(self.update_fram()))
         if isfile("trained_space.p") and len(self.clusters_space) == 0:
-            space = pickle.load(open("trained_space.p", "rb"))
-            self.clusters_space = space["clusters_space"]
-            self.data_dir = space["data_dir"]
-            self.distances = space["distances"]
-            self.frams = space["frams"]
+            self.load_model()
+
         newframs = self.update_fram() - self.frams
         if len(newframs) > 0 and len(self.update_fram())%TRAIN_THRESHOLD == 0:
             print "-----------------------------TRAINING----------------------------------"
             self.renew()
-            if isfile("data.p") and isfile("path2rep.p") :
-                data = pickle.load(open("data.p", "rb"))
-                path2rep = pickle.load(open("path2rep.p", "rb"))
-            else:
-                data = defaultdict(lambda :defaultdict(list))
-                path2rep = defaultdict(lambda :0)
-                for frame in listdir(self.data_dir):
-                    for cluster in listdir(self.data_dir + "/" + frame):
-                        for pic in listdir(self.data_dir + "/" + frame + "/" + cluster):
-                            path = self.data_dir + "/" + frame + "/" + cluster + "/" + pic
-                            data[frame][cluster].append(path)
-                            path2rep[path] = E.get_rep_preprocessed(path)
-                pickle.dump(data, open("data.p", "wb"), protocol=2)
-                pickle.dump(path2rep, open( "path2rep.p", "wb" ), protocol=2)
 
-            if isfile("trained_space.p"):
-                space = pickle.load(open("trained_space.p", "rb"))
-                self.clusters_space = space["clusters_space"]
-                self.data_dir = space["data_dir"]
-                self.distances = space["distances"]
-                self.frams = space["frams"]
-            else:
-                clusters = []
-                for frame in data.keys():
-                    for cluster in data[frame].keys():
-                        FacePics = set()
-                        for path in data[frame][cluster]:
-                            FacePics.add(FacePic(path2rep[path],frame,path))
-                        clusters.append(FaceCluster(FacePics))
-                    self.frams.add(frame)
-                self.add_clusters(clusters)
-                self.merge_closest(MERGE_DISTANCE_THRESHOLD)
-                self.name()
-                d = defaultdict()
-                d["clusters_space"] = self.clusters_space
-                d["data_dir"] = self.data_dir
-                d["distances"] = self.distances
-                d["frams"] = self.frams
-                pickle.dump(d, open("trained_space.p", "wb"), protocol=2)
+            data = defaultdict(lambda :defaultdict(list))
+            path2rep = defaultdict(lambda :0)
+            for frame in listdir(self.data_dir):
+                for cluster in listdir(self.data_dir + "/" + frame):
+                    for pic in listdir(self.data_dir + "/" + frame + "/" + cluster):
+                        path = self.data_dir + "/" + frame + "/" + cluster + "/" + pic
+                        data[frame][cluster].append(path)
+                        path2rep[path] = E.get_rep_preprocessed(path)
+
+            clusters = []
+            for frame in data.keys():
+                for cluster in data[frame].keys():
+                    FacePics = set()
+                    for path in data[frame][cluster]:
+                        FacePics.add(FacePic(path2rep[path], frame, path))
+                    clusters.append(FaceCluster(FacePics))
+                self.frams.add(frame)
+            self.add_clusters(clusters)
+            self.merge_closest(MERGE_DISTANCE_THRESHOLD)
+            self.name()
+            self.save_model()
+
         elif len(self.update_fram()) > TRAIN_THRESHOLD \
                 and len(newframs)%INCREMENTAL_TRAIN_THRESHOLD == 0  \
                 and len(newframs)%TRAIN_THRESHOLD != 0:

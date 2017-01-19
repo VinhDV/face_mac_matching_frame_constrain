@@ -2,10 +2,9 @@ import os, sys
 #sys.path.append(os.path.realpath(os.path.dirname(__file__) + "/.." + "/.."))
 #print sys.path
 from os import listdir
-from preprocesser import preprocesser
 import pyrebase
 from cluster_space import Clusterspace
-from collections import defaultdict
+from add_data import DataAdder
 import imgur_download
 from request_to_server import *
 import cv2
@@ -17,9 +16,9 @@ config = {
     "messagingSenderId": "409014105383"
 }
 firebase = pyrebase.initialize_app(config)
-p = preprocesser()
 data_dir = "./Room1_preprocess"
 space = Clusterspace(data_dir=data_dir)
+D = DataAdder(data_dir=data_dir)
 
 def count_cluster(cur_dir):
     count = set()
@@ -32,28 +31,6 @@ def count_cluster(cur_dir):
 
 
 
-def add_data(fram_dir,data_dir):
-    """
-    :param fram_dir: fir of the frame to add
-    :param data_dir: dir where all frames are stored
-    :return: None
-    """
-    framID = fram_dir.split("/")[-1]
-    cluster2pic = defaultdict(lambda :defaultdict())
-    for pic in listdir(fram_dir):
-        if pic.split(".")[-1] == "jpg":
-            name = pic.split(".")[0]
-            clusterID, picID =name.split("_")
-            cluster2pic[clusterID][picID] = fram_dir+"/"+pic
-    new_path = data_dir + "/" + framID
-    os.mkdir(new_path)
-    for cluster in cluster2pic.keys():
-        new_cluster = new_path + "/" + str(cluster)
-        os.mkdir(new_cluster)
-        for pic in cluster2pic[cluster].keys():
-            face = p.preprocess(cluster2pic[cluster][pic])
-            if face != None:
-                cv2.imwrite(new_cluster+"/"+pic+".jpg",face)
 
 
 def match_mac_image(cur_dir):

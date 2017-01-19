@@ -9,6 +9,7 @@ import dill
 import pickle
 from Encoder import encoder
 from munkres import Munkres
+
 E = encoder()
 RECOGNISE_THRESHOLD = 0.9
 MERGE_DISTANCE_THRESHOLD = 2.0
@@ -16,11 +17,6 @@ INCREMENTAL_TRAIN_THRESHOLD = 20
 TRAIN_THRESHOLD = 40
 SMALLEST_SIZE_NAME_THRESHOLD = 8
 
-def pad_to_square(a, pad_value=0):
-    m = a.reshape((a.shape[0], -1))
-    padded = pad_value * np.ones(2 * [max(m.shape)], dtype=m.dtype)
-    padded[0:m.shape[0], 0:m.shape[1]] = m
-    return padded
 
 def _find_key(my_dict, value):
     """
@@ -38,11 +34,13 @@ def _find_key(my_dict, value):
     return key
 
 class Clusterspace:
-    def __init__(self, data_dir, clusters = None):
+    def __init__(self, data_dir, clusters = None, mac = None):
+        self.mac = mac
         self.data_dir = data_dir
         self.clusters_space = []
         self.distances = defaultdict()
         self.frams = set()
+        self.host = None
         if clusters:
             self.clusters_space += clusters
             self.calculate_distance()
@@ -72,7 +70,7 @@ class Clusterspace:
 
     def update_fram(self):
         cur_frams = set()
-        for frame in listdir(self.data_dir):
+        for frame in self.data_dir:
             cur_frams.add(frame)
         return cur_frams
 
@@ -112,44 +110,47 @@ class Clusterspace:
         self.name()
         self.save_model()
 
-    def train(self):
-        print "#fram = " + str(len(self.update_fram()))
-        if isfile("trained_space.p") and len(self.clusters_space) == 0:
-            self.load_model()
+    def find_host_cluster(self):
+        pass
 
-        newframs = self.update_fram() - self.frams
-        if len(newframs) > 0 and len(self.update_fram())%TRAIN_THRESHOLD == 0:
-            print "-----------------------------TRAINING----------------------------------"
-            self.renew()
-
-            data = defaultdict(lambda :defaultdict(list))
-            path2rep = defaultdict(lambda :0)
-            for frame in listdir(self.data_dir):
-                for cluster in listdir(self.data_dir + "/" + frame):
-                    for pic in listdir(self.data_dir + "/" + frame + "/" + cluster):
-                        path = self.data_dir + "/" + frame + "/" + cluster + "/" + pic
-                        data[frame][cluster].append(path)
-                        path2rep[path] = E.get_rep_preprocessed(path)
-
-            clusters = []
-            for frame in data.keys():
-                for cluster in data[frame].keys():
-                    FacePics = set()
-                    for path in data[frame][cluster]:
-                        FacePics.add(FacePic(path2rep[path], frame, path))
-                    clusters.append(FaceCluster(FacePics))
-                self.frams.add(frame)
-            self.add_clusters(clusters)
-            self.merge_closest(MERGE_DISTANCE_THRESHOLD)
-            self.name()
-            self.save_model()
-
-        elif len(self.update_fram()) > TRAIN_THRESHOLD \
-                and len(newframs)%INCREMENTAL_TRAIN_THRESHOLD == 0  \
-                and len(newframs)%TRAIN_THRESHOLD != 0:
-                self.incremental_train()
-        else:
-            return
+    # def train(self):
+    #     print "#fram = " + str(len(self.update_fram()))
+    #     if isfile("trained_space.p") and len(self.clusters_space) == 0:
+    #         self.load_model()
+    #
+    #     newframs = self.update_fram() - self.frams
+    #     if len(newframs) > 0 and len(self.update_fram())%TRAIN_THRESHOLD == 0:
+    #         print "-----------------------------TRAINING----------------------------------"
+    #         self.renew()
+    #
+    #         data = defaultdict(lambda :defaultdict(list))
+    #         path2rep = defaultdict(lambda :0)
+    #         for frame in listdir(self.data_dir):
+    #             for cluster in listdir(self.data_dir + "/" + frame):
+    #                 for pic in listdir(self.data_dir + "/" + frame + "/" + cluster):
+    #                     path = self.data_dir + "/" + frame + "/" + cluster + "/" + pic
+    #                     data[frame][cluster].append(path)
+    #                     path2rep[path] = E.get_rep_preprocessed(path)
+    #
+    #         clusters = []
+    #         for frame in data.keys():
+    #             for cluster in data[frame].keys():
+    #                 FacePics = set()
+    #                 for path in data[frame][cluster]:
+    #                     FacePics.add(FacePic(path2rep[path], frame, path))
+    #                 clusters.append(FaceCluster(FacePics))
+    #             self.frams.add(frame)
+    #         self.add_clusters(clusters)
+    #         self.merge_closest(MERGE_DISTANCE_THRESHOLD)
+    #         self.name()
+    #         self.save_model()
+    #
+    #     elif len(self.update_fram()) > TRAIN_THRESHOLD \
+    #             and len(newframs)%INCREMENTAL_TRAIN_THRESHOLD == 0  \
+    #             and len(newframs)%TRAIN_THRESHOLD != 0:
+    #             self.incremental_train()
+    #     else:
+    #         return
 
     def match(self, f_path):
         if len(self.update_fram()) <= TRAIN_THRESHOLD:
@@ -207,6 +208,9 @@ class Clusterspace:
         #     cluster.show_faces()
 
         return ret
+
+    def is_matchable(self):
+        pass
 
     def show__working_cluster(self):
         _, idx = self.getWorkingCluster()

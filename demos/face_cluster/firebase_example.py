@@ -44,7 +44,7 @@ def match_mac_image(cur_dir):
        an array of macs
        macs[0] is mac address of 0.png in cur_dir
        '''
-    add_data(cur_dir, data_dir)
+    D.add_data(cur_dir)
     space.train()
     FaceToName = space.match(cur_dir)
 

@@ -49,6 +49,8 @@ class FaceCluster:
         for face_pic in self.facepics:
             path = face_pic.pic_dir
             img = cv2.imread(path)
+            if img == None:
+                continue
             cv2.imshow(path,img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
